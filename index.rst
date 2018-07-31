@@ -11,12 +11,15 @@ Material for the Advanced Bioinformatics Workshop Trieste 2018
 
 - Day 5 (Friday, August 24th)
 
-_Venue_
+Venue
+==================
 
 The workshop will take place at the International Centre for Theoretical Physics, Trieste, Italy.
 
+Table of Contents
+==================
+
 .. toctree::
-   :caption: Table of Contents
    :maxdepth: 2
    :numbered:
 
