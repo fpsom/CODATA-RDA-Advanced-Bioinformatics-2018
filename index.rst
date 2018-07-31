@@ -1,15 +1,15 @@
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 ===============================================================
 
-- _**Day 1** (Monday, August 20th):_
+- Day 1 (Monday, August 20th)
 
-- _**Day 2** (Tuesday, August 21st):_
+- Day 2 (Tuesday, August 21st)
 
-- _**Day 3** (Wednesday, August 22nd):_
+- Day 3 (Wednesday, August 22nd)
 
-- _**Day 4** (Thursday, August 23rd):_
+- Day 4 (Thursday, August 23rd)
 
-- _**Day 5** (Friday, August 24th):_
+- Day 5 (Friday, August 24th)
 
 _Venue_
 
@@ -17,7 +17,7 @@ The workshop will take place at the International Centre for Theoretical Physics
 
 .. toctree::
    :caption: Table of Contents
-   :maxdepth: 1
+   :maxdepth: 2
    :numbered:
 
    0.Setup.md
