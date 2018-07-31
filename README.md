@@ -19,3 +19,14 @@ _Venue_
 The workshop will take place at the International Centre for Theoretical Physics, Trieste, Italy.
 
 _The rendered site is available [here](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io)_
+
+## License
+
+![CC by 4.0](https://licensebuttons.net/l/by-sa/4.0/88x31.png) 
+All the instruction material is made available under the [Creative Commons Attribution license CC by 4.0](https://creativecommons.org/licenses/by/4.0/). Please see [LICENSE](LICENSE.md) for more details.
+
+## Citation
+
+Fotis E. Psomopoulos, ... (eds): "CODATA-RDA-Advanced-Bioinformatics-2018"  Version 2018.01, August 2018,
+https://github.com/fpsom/CODATA-RDA-Advanced-Bioinformatics-2018 In progress.
+
