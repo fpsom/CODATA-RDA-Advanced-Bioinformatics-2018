@@ -2,6 +2,9 @@
 
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
+![ICSU-CODATA Logo](_static/images/ICSU-CODATA-Logo.png "ICSU-CODATA Logo")
+
+
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 
 - _**Day 1** (Monday, August 20th):_
@@ -29,4 +32,3 @@ All the instruction material is made available under the [Creative Commons Attri
 
 Fotis E. Psomopoulos, ... (eds): "CODATA-RDA-Advanced-Bioinformatics-2018"  Version 2018.01, August 2018,
 https://github.com/fpsom/CODATA-RDA-Advanced-Bioinformatics-2018 In progress.
-

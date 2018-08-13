@@ -1,6 +1,12 @@
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 ===============================================================
 
+.. figure:: _static/images/ICSU-CODATA-Logo.png
+   :scale: 50 %
+   :align: center
+   :alt: ICSU-CODATA-Logo
+
+
 - Day 1 (Monday, August 20th)
 
 - Day 2 (Tuesday, August 21st)
