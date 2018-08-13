@@ -4,6 +4,9 @@
 
 ![ICSU-CODATA Logo](_static/images/ICSU-CODATA-Logo.png "ICSU-CODATA Logo")
 
+## Read the docs version
+https://codata-rda-advanced-bioinformatics-2018.readthedocs.io
+
 
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 
