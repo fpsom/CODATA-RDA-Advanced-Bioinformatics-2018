@@ -2,6 +2,8 @@
 
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
+![ELIXIR Logo](_static/images/ELIXIR_logo.png "ELIXIR Logo")
+
 ![ICSU-CODATA Logo](_static/images/ICSU-CODATA-Logo.png "ICSU-CODATA Logo")
 
 ## Read the docs version
@@ -28,7 +30,7 @@ _The rendered site is available [here](https://codata-rda-advanced-bioinformatic
 
 ## License
 
-![CC by 4.0](https://licensebuttons.net/l/by/4.0/88x31.png) 
+![CC by 4.0](https://licensebuttons.net/l/by/4.0/88x31.png)
 All the instruction material is made available under the [Creative Commons Attribution license CC by 4.0](https://creativecommons.org/licenses/by/4.0/). Please see [LICENSE](LICENSE.md) for more details.
 
 ## Citation
