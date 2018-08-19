@@ -1,12 +1,12 @@
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 ===============================================================
 
-.. figure:: _static/images/Banner-Logo.png
+.. figure:: _static/images/Banner-Logo1.png
    :scale: 75 %
    :align: center
    :alt: ELIXIR-RDA-ICSU-CODATA-Logo
 
-The agenda of the course is available as a pdf file here :download:`pdf <files/AdvancedBioinformaticsCourseMLProgramme.pdf>`
+The agenda of the course is available as a :download:`pdf <files/AdvancedBioinformaticsCourseMLProgramme.pdf>` file.
 
 Venue
 ==================
