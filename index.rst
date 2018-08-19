@@ -1,7 +1,7 @@
 Material for the Advanced Bioinformatics Workshop Trieste 2018
 ===============================================================
 
-.. figure:: _static/images/Banner-Logo1.png
+.. figure:: _static/images/Banner-Logo.png
    :scale: 75 %
    :align: center
    :alt: ELIXIR-RDA-ICSU-CODATA-Logo
