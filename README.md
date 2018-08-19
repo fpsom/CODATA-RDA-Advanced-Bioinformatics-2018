@@ -1,28 +1,19 @@
-# CODATA-RDA-Advanced-Bioinformatics-2018
+# ELIXIR/CODATA-RDA Advanced Bioinformatics Workshop
 
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
-![ELIXIR, ICSU, CODATA Logos](_static/images/Banner-Logo.png "ELIXIR, ICSU, CODATA Logos")
+![ELIXIR, ICSU, CODATA Logos](_static/images/Banner-Logo.png "ELIXIR, RDA, ICSU, CODATA Logos")
 
 ## Read the docs version
 https://codata-rda-advanced-bioinformatics-2018.readthedocs.io
 
+This repository contains the training material for the _"ELIXIR/CODATA-RDA Advanced Bioinformatics Workshop"_ that took place during the [2018 CODATA-RDA School of Research Data Science](www.codata.org/datatrieste2018) at ICTP in Trieste, Italy.
 
-Material for the Advanced Bioinformatics Workshop Trieste 2018
-
-- _**Day 1** (Monday, August 20th):_
-
-- _**Day 2** (Tuesday, August 21st):_
-
-- _**Day 3** (Wednesday, August 22nd):_
-
-- _**Day 4** (Thursday, August 23rd):_
-
-- _**Day 5** (Friday, August 24th):_
+The agenda of the course is available as a pdf file [here](/files/AdvancedBioinformaticsCourseMLProgramme.pdf).
 
 _Venue_
 
-The workshop will take place at the International Centre for Theoretical Physics, Trieste, Italy.
+The workshop took place at the International Centre for Theoretical Physics, Trieste, Italy.
 
 _The rendered site is available [here](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io)_
 

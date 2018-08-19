@@ -2,19 +2,11 @@ Material for the Advanced Bioinformatics Workshop Trieste 2018
 ===============================================================
 
 .. figure:: _static/images/Banner-Logo.png
-   :scale: 50 %
+   :scale: 75 %
    :align: center
-   :alt: ELIXIR-ICSU-CODATA-Logo
+   :alt: ELIXIR-RDA-ICSU-CODATA-Logo
 
-- Day 1 (Monday, August 20th)
-
-- Day 2 (Tuesday, August 21st)
-
-- Day 3 (Wednesday, August 22nd)
-
-- Day 4 (Thursday, August 23rd)
-
-- Day 5 (Friday, August 24th)
+The agenda of the course is available as a pdf file here :download:`pdf <files/AdvancedBioinformaticsCourseMLProgramme.pdf>`
 
 Venue
 ==================
