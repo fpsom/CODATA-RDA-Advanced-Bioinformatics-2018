@@ -1,0 +1,922 @@
+---
+title: "Day4"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: "cerulean"
+    number_sections: true
+    toc: true
+    toc_depth: 5
+    toc_float: true
+    collapsed: false
+    df_print: paged
+    code_folding: hide
+    # self_contained: false
+    keep_md: true
+  md_document:
+    variant: github_markdown
+    allow_html_dependencies: TRUE
+    always_allow_html: yes
+---
+
+
+# Day 4: Thursday August 23
+
+## General Topics
+- Introduction to epigenomics
+-  ChIP-Seq Differential Modification Calling 
+    - Pre-processing
+    - Peak Calling
+    - Differential Peak Calling
+- Analysing DNA methylation
+    - Reduced Representation Bisulfit Sequencing (RRBS)
+    - Differential Methylation Calling on CpGs
+    - Differentially Methylated Regions
+    - Annotation  
+## Schedule
+
+- _**09:00 - 10:00**_  (_Lecture_) Epigenomics 1: Analysing Chromatin: ChIP-Seq, ATAC-Seq, and beyond. 
+
+
+- _**10:00 - 11:00**_ (Hands-on) ChIP-Seq  Analysis Pipeline
+
+- _**11:00 - 11:30**_ _**Coffee break**_
+
+- _**11:30 - 12:30**_ (Hands-on) ChIP-Seq  Analysis Pipeline
+
+- _**12:30 - 14:00**_ _**Lunch break**_
+
+- _**14:00 - 15:00**_   (_Lecture_) Epigenomics 2: Experiment and Analysis for DNA methylation detection (RRBS)
+
+- _**15:00 - 16:00**_ (Hands-on) RRBS Analysis Pipeline
+
+- _**16:00 - 16:15**_ _**Coffee break**_
+
+- _**16:15 - 18:00**_ (Hands-on) RRBS Analysis Pipeline 
+
+
+
+## Lead Instructor
+[Gabriele Schweikert](http://homepages.inf.ed.ac.uk/gschweik/) |  [email](mailto:gabriele.schweikert@gmail.com)
+
+## Co-Instructor(s)
+[David Helekal]() | [@]() | [email](mailto:d.helekal@dundee.ac.uk)
+
+## Helper(s)
+Maria Tsagiopoulou
+
+
+
+### Bioconductor Packages
+
+
+Bioconductor has many packages which support the analysis of high-throughput sequence data; currently there are more than 70  packages that can be used to analyse ChIP-seq data. A list, and short description of available packages can be found here: [BiocView  ChIP-Seq](http://bioconductor.org/packages/release/BiocViews.html#___ChIPSeq)
+
+Bioconductor has scheduled releases every 6 months, with these releases new versions of the packages will become available. 
+the Bioconductor project ensures that all the packages within a release will work together in harmony (hence the “conductor” metaphor).  
+
+If you haven’t installed the packages that we need to run this tutorial you will need to do so now. 
+
+
+```{r Packages, eval = FALSE, message=FALSE}
+source("https://bioconductor.org/biocLite.R")
+biocLite("knitr")
+biocLite("kableExtra")
+biocLite("TxDb.Hsapiens.UCSC.hg38.knownGene")
+biocLite("BSgenome.Hsapiens.UCSC.hg38")
+biocLite("DiffBind")
+biocLite('MotifDb')
+biocLite('methylKit')
+biocLite('genomation')
+biocLite('ggplot2')
+biocLite('TxDb.Mmusculus.UCSC.mm10.knownGene')
+biocLite("AnnotationHub")
+biocLite("annotatr")
+biocLite("bsseq")
+biocLite("DSS")
+```
+
+
+
+Check that all packages can be loaded:
+
+```{r libraries, eval = FALSE, messgae=FALSE, results=FALSE, cache=FALSE}
+library("knitr")
+library("kableExtra")
+library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+library("BSgenome.Hsapiens.UCSC.hg38")
+library("DiffBind")
+library('MotifDb')
+```
+
+
+## ChIP-Seq Data Analysis 
+
+During this course we shall look at the analysis of a typical (very simple) ChIP-Seq experiment. 
+We will start from the fastq files, and briefly look at alignment and pre-processing steps. These will not be run during the tutorial due to time constraints. Instead you will be provided with pre-processed bam files. However, by following the instructions you will be able to create the provided files on your own. 
+
+We will focus on the Histone modification H3K4me3 and will try to detect differences in the genomic distribution of this epigenomic mark between two different cell lines: human embryonic stem cells H1 and fetal lung cells, myofibroblasts, IMR90 cells. We will follow two different strategies: 1) It is well known that the modification H3K4me3 is predominantly found around gene promoters, and we will thus use annotated genes to define regions of interests (ROIs) around their promoters. We will try to find H3K4me3 differences in these regions. 2) We will also follow a more data driven approach where we use a peak caller to identify regions of significant enrichment relative to the background and we will also do a differential modification analysis in those regions.
+
+### Data
+During the tutorial we will use data from the [Roadmap Epigenomics Project](http://www.roadmapepigenomics.org).
+
+
+After locating the data  [Epigenomics_metadata.xlsx](ftp://ftp.ncbi.nlm.nih.gov/pub/geo/DATA/projects/NCBI_Epigenomics_metadata.xlsx) we have stored the relevant SRR accession numbers in a SRR_table file which we have used to downloaded the data using fastq_dump:
+
+```{bash message = FALSE}
+# less SRR_table | parallel "fastq-dump --outdir fastq  --gzip --skip-technical  --readids --read-filter pass --dumpbase --split-3 --clip {}"
+```
+
+
+We have already prepared the data sets for you. 
+Please download the data here: [http://bifx-core.bio.ed.ac.uk/Gabriele/public/Trieste_Data.tar.gz](http://bifx-core.bio.ed.ac.uk/Gabriele/public/Trieste_Data.tar.gz). 
+
+### Preprocessing Data
+
+We have preprocessed the data sets for you and will not do these steps in class. We will talk you through the different steps such that you can do it on your own data.
+You will use a number of command-line tools, most of which you have encountered in the last couple of days:
+
+* [**fastqc**](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), a quality control tool for high throughput sequence data.  
+
+* [**mulitqc**](http://multiqc.info) to aggregate results from bioinformatics analyses across many samples into a single report.
+
+* [**trim_galore**](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/), a wrapper tool around Cutadapt to apply quality and adapter trimming to FastQ files.
+
+* [**Bowtie2**](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), is a fast and memory-efficient tool for aligning sequencing reads to long reference sequences.
+
+* [**Samtools**](http://www.htslib.org), a set of utilities that manipulate alignments in the BAM format. It imports from and exports to the SAM (Sequence Alignment/Map) format, does sorting, merging and indexing, and allows to retrieve reads in any regions swiftly.
+
+Additionally, we use the GNU [**Wget**](https://www.gnu.org/software/wget/) package for retrieving files using HTTP, HTTPS, FTP and FTPS and the GNU [**parallel**](https://www.gnu.org/software/parallel/) tool for executing jobs in parallel using one or more computers, such that different fastq files can be processed all at the same time rather than sequentially. 
+
+## Quality Control
+
+Before we continue, we would like to assess the quality of each data file that we have downloaded so far. To do that we use the **fastqc** tool, e.g.:   
+
+```{bash message = FALSE, eval=FALSE}
+cd fastq
+fastqc IMR90-H3K4me3-1-1.fastq.gz 
+```
+
+This generates a file *IMR90-H3K4me3-1-1_fastqc.html* and a corresponding *IMR90-H3K4me3-1-1_fastqc.zip*. By opening the html file we can inspect the result [here](http://bifx-core.bio.ed.ac.uk/Gabriele/public/CamBioScience/IMR90-H3K4me3-1-1_fastqc.html). As you can see, there are several issues with this file and we will have to use trim_galore to filter the reads.
+
+As we want to run fastqc for each fastq file in the directory, we would like to speed up the process by using the GNU **parallel** function. Here we use the **ls** function to list all files ending on '.fastq.gz', we then pass all these file names on to the fastqc tool using the | (pipe) functionality.  
+
+```{bash message = FALSE, eval=FALSE}
+
+ls *fastq.gz | parallel "fastqc {}"
+```
+
+## Trimmming
+
+As we have observed in the fastqc report, many reads have low quality towards the end of the read. Additionally, we have adapter contamination. To remove these issues we run trim_galore, which will also create another fastqc report:
+
+```{bash message = FALSE, eval=FALSE}
+ls *fastq.gz | parallel -j 30 trim_galore  --stringency 3 --fastqc -o trim_galore/ {}
+```
+
+Compare the overall quality of the remaining reads after trimming with the original report:
+[fastqc](http://bifx-core.bio.ed.ac.uk/Gabriele/public/CamBioScience/IMR90-H3K4me3-1-1_trimmed_fastqc.html).
+
+Eventually, we use *multqc* to aggregate the results.   
+
+```{bash message = FALSE, eval=FALSE}
+ls *.fastq.gz | parallel fastqc
+multiqc
+```
+
+The multiqc reports can be viewed [here](http://bifx-core.bio.ed.ac.uk/Gabriele/public/CamBioScience/EpiCourse2018_Data/Bowtie2/multiqc_report.html#fastqc_overrepresented_sequences).
+
+## Alignment
+
+```{bash message = FALSE, eval=FALSE}
+bowtie2-build Annotation/Homo_sapiens.a.dna.primary_assembly.fa GRCh38 
+ls *_trimmed.fq.gz | parallel -j 30 bowtie2 -x GRCh38 -U {} -S {}.sam
+ls *.sam | parallel "samtools view -bS {} | samtools sort - -o {}.bam"
+ls *.bam | parallel "samtoots index {}"
+```
+
+
+
+
+
+## Merge files and subset for tutorial
+
+
+
+To merge files from the different lanes:
+
+```{bash message = FALSE,eval=FALSE}
+samtools merge IMR90-H3K4me3-1.bam IMR90-H3K4me3-1-1_trimmed.fq.gz.sam.bam IMR90-H3K4me3-1-2_trimmed.fq.gz.sam.bam
+
+```
+
+Next we need to index these bam files 
+```{bash message = FALSE,eval=FALSE}
+samtools index IMR90-H3K4me3-1.bam
+
+```
+
+```{bash message = FALSE,eval=FALSE}
+samtools view -h IMR90-H3K4me3-2.bam 19 > chr19-IMR90-H3K4me3-2.sam
+
+samtools view -bS chr19-IMR90-H3K4me3-2.sam > chr19-IMR90-H3K4me3-2.bam
+
+```
+
+
+hese bam and index files are available for you in the [Bowtie2](http://bifx-core.bio.ed.ac.uk/Gabriele/public/Trieste_Data/ChIP-Seq/Bowtie2) sub-directory of your downloaded **EpiCourse2018_Data** Folder.
+
+
+
+
+## Creating Sample Sheet
+
+We will now create a sample sheet that captures the most important information about the data. To do that open a new text file in RStudio, copy the information below into the file, remove empty spaces and replace them with commas and save it as a comma separated file (.csv),  **sampleSheet.csv** file. Note that for later analysis, it is important to include the precise column names and remove newline and empty spaces.
+
+```{r samples, echo=FALSE}
+library(knitr)
+library("kableExtra")
+meta <- read.csv("Trieste_Data/ChIP-Seq/SampleSheet.csv")
+meta <- meta[,1:8]
+kable(meta, format="html") %>% kable_styling("condensed", full_width = TRUE, position="left", font_size=12)
+```
+
+
+
+# Defining Regions of Interests
+
+To analyse the ChIP-Seq data sets we first have to think about, the regions which we want to examine in detail. One obvious choice is to look at all those regions where the ChIP signal is significantly increased relative to the background signal. We will use a Peak caller (MACS2) shortly to detect these regions. However, the performance of  peak callers depends on the right set of parameters, the signal-to-noise-ratio of your data and a lot of other things. So, sometimes it is also interesting to use prior information about the data to inform your choice of regions. For example, it is well known that H3K4me3 is found predominantly around promoters of actively transcribed genes. As genes a reasonably well annotated in human, it is worth to also take a 'supervised' approach, where we look at defined windows around transcription start sites (TSS). This is what we are doing in the following. After that we will also look at enriched regions called by MACS2. 
+
+
+## Use Annotation to Define Promoter Regions
+
+Bioconductor provides an easy R interface to a number of prefabricated databases that contain annotations. You will learn more about available databases here: [AnnotationDbi](https://bioconductor.org/packages/release/bioc/vignettes/AnnotationDbi/inst/doc/IntroToAnnotationPackages.pdf)
+One such package is **TxDb.Hsapiens.UCSC.hg38.knownGene** which accesses UCSC build hg19 based on the knownGene Track. Here we are first interested in annotated genes in this database:
+
+
+```{r Annotation, message = FALSE}
+library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+G = genes(txdb, columns="gene_id", filter=NULL, single.strand.genes.only=TRUE)
+```
+
+Have a look at the object:
+```{r GeneWidthHists}
+G
+summary(width(G))
+hist(width(G)[width(G)<100000]/1000,breaks = 1000, main = 'Histogram of Gene Lengths',xlab='gene length in kbp')
+```
+
+For simplicity (and to practice R) we would like to look at genes which are longer than 2000bp but smaller than 1Mbp, are on chromosome 19 and are also having a gap to their neighboring genes of at least 2000bp.
+
+```{r AnnotationFilterShort}
+
+longGenes = G[width(G)>2000 & width(G)<100000 & seqnames(G)=='chr19']
+summary(width(longGenes))
+hist(width(longGenes)/1000,breaks = 1000,main = 'Histogram of Filtered Gene Lengths',xlab='gene length in kbp')
+```
+
+We will next filter out overlapping genes or genes which are close to a neighboring gene. 
+
+```{r AnnotationFilter}
+
+ov = findOverlaps( G,longGenes,maxgap=2000)
+ii = which(duplicated(subjectHits(ov)))
+OverlappingGenes = longGenes[subjectHits(ov)[ii]]
+nonOverlappinglongGenes = longGenes[-subjectHits(ov)[ii]]
+```
+
+Test if we didn't make a mistake:
+```{r AnnotationFilterTest}
+ov = findOverlaps(nonOverlappinglongGenes ,G)
+```
+
+
+For the filtered genes we next look at promoter regions:
+```{r AnnotationFilteredPromoters}
+Promoters = promoters(nonOverlappinglongGenes ,upstream=2000, downstream=200)
+Promoters
+
+```
+
+
+For our toy example we will only use a random subset of 500 of these regions. We will use the random number generator but set a seed such that our code is reproducible.
+
+```{r AnnotationCandidatePromoters}
+set.seed(1237628)
+idx = sort(sample(x=length(Promoters),size=500,replace=FALSE))
+candPromoters = Promoters[idx] 
+```
+
+Now save your object in case you want to use it again later.
+You can also write it out as a bed file.
+
+```{r AnnotationFilteredPromotersSave}
+save(file='Trieste_Data/ChIP-Seq/RoI/candPromoters.rData',candPromoters,nonOverlappinglongGenes)
+
+df <- data.frame(seqnames=seqnames(candPromoters),
+  starts=start(candPromoters)-1,
+  ends=end(candPromoters),
+  names=paste('Promoter-',seq(1,length(candPromoters)),sep=''),
+  scores=c(rep(1, length(candPromoters))),
+  strands=strand(candPromoters))
+
+write.table(df, file="Trieste_Data/ChIP-Seq/candPromoters.bed", quote=F, sep="\t", row.names=F, col.names=F)
+```
+
+
+
+## Detecting Enriched Regions 
+
+Next, we will examine regions that are detected to be significantly enriched by a peak caller.  We are using MACS2 and we are trying to find enriched regions in each of the ChIP samples relative to the cell specific Input.  We have already prepared this step for you, so you do not need to run the following steps. (Note, that if you run it on your own, you need to use the shell / terminal not R console.)
+
+```{bash message = FALSE, eval=FALSE}
+macs2 callpeak -t Bowtie2/chr19-IMR90-H3K4me3-1.bam  -c  Bowtie2/chr19-IMR90-Input.bam  -g hs -q 0.01  --call-summits -n IMR90-H3K4me3-1 --outdir MACS2
+ 
+macs2 callpeak -t Bowtie2/chr19-IMR90-H3K4me3-2.bam  -c  Bowtie2/chr19-IMR90-Input.bam  -g hs -q 0.01  --call-summits -n IMR90-H3K4me3-2 --outdir MACS2
+ 
+
+
+macs2 callpeak -t Bowtie2/chr19-H1-H3K4me3-1.bam  -c  Bowtie2/chr19-H1-Input-2.bam  -g hs -q 0.01  --call-summits -n H1-H3K4me3-1 --outdir MACS2
+ 
+macs2 callpeak -t Bowtie2/chr19-H1-H3K4me3-3.bam  -c  Bowtie2/chr19-H1-Input-2.bam  -g hs -q 0.01  --call-summits -n H1-H3K4me3-3 --outdir MACS2
+``` 
+ 
+ 
+These Files are available for you in the [MACS2](http://bifx-core.bio.ed.ac.uk/Gabriele/public/CamBioScience/EpiCourse2018_Data/MACS2) sub-directory of your downloaded **EpiCourse2018_Data** Folder.
+ 
+# Differential Region (Occupancy)  Analysis (DiffBind)
+
+Now, we are finally ready for the real thing: Finding differences between the two cell lines, H1 and IMR90. For this task we will use the [DiffBind](http://bioconductor.org/packages/release/bioc/html/DiffBind.html) Bioconductor package. 
+
+First, we will append our SampleSheet with columns specifying the MACS2 called enriched regions for each sample:
+
+
+```{r samples2, echo=FALSE}
+meta <- read.csv("Trieste_Data/ChIP-Seq/SampleSheet.csv")
+kable(meta, format="html", digits=2, row.names=TRUE) %>% kable_styling("condensed", full_width = TRUE, position="left", font_size=12)
+```
+
+(Note this file is also provided for you in [here](http://bifx-core.bio.ed.ac.uk/Gabriele/public/CamBioScience/EpiCourse2018_Data/SampleSheet.csv.)
+This file will be used to create a **DBA** object: Initially only the meta data is used and the peak regions are loaded. 
+
+```{r Diffbind1, message = FALSE}
+  library(DiffBind)
+  DBA <- dba(sampleSheet="Trieste_Data/ChIP-Seq/SampleSheet.csv")
+  #DBA <- dba(sampleSheet="SampleSheetPromoters.csv")
+```
+
+Examine the DBA object: It shows you the number of enriched regions discovered in each sample (the **Intervals** column).  It also shows you the number of **consensus** peaks (1509) at the top of the output.
+
+```{r Diffbind1a}
+  DBA
+```
+  
+To can get an idea how well the enriched regions correlate we can for example plot the DBA object. It is reassuring to see that similar regions are called in the replicate samples:  
+  
+```{r Diffbind1a_plot}
+  plot(DBA)
+```
+  
+  
+You can next go ahead and further analysis the differences in enriched regions detected for the two cell lines. Further details can be found in the [DiffBind vignette](http://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf).     
+  
+We are not going to do this here, instead we are going to create a  *consensus peak set*, which we will use for our differential modification analysis:
+
+```{r Diffbind1aa}
+  consensus_peaks <- dba.peakset(DBA, bRetrieve=TRUE)
+  save(file='Trieste_Data/ChIP-Seq/RoI/MACS2consensus_peaks.rData',consensus_peaks)
+
+df <- data.frame(seqnames=seqnames(consensus_peaks),
+  starts=start(consensus_peaks)-1,
+  ends=end(consensus_peaks),
+  names=paste('MACS2consensus-',seq(1,length(consensus_peaks)),sep=''),
+  scores=c(rep(1, length(consensus_peaks))),
+  strands=strand(consensus_peaks))
+
+write.table(df, file="Trieste_Data/ChIP-Seq/RoI/MACS2consensus_peaks.bed", quote=F, sep="\t", row.names=F, col.names=F)
+```
+
+
+
+
+
+# Differential Modification (Affinity) Analysis (DiffBind)
+
+We are not only interested in where we find the modification on the genome, but also how much we find there. We therefore continue with a 
+Differential Modification Analysis on the consensus peak set. To do that we need to count how many reads overlap with each peak in each of the samples:
+
+```{r Diffbind2}
+  DBA <- dba.count(DBA)
+```
+
+Once we have counted the reads, we can again observe how well samples correlate, or alternatively perform principal component analysis.
+
+```{r Diffbind2a}
+  plot(DBA)
+  dba.plotPCA(DBA,DBA_TISSUE,label=DBA_CONDITION)
+```
+  
+The next step, will be a statistical test to determine regions which are significantly different between H1 and IMR90 cells. In this case, we have to set a contrast between the different tissues. 
+(In other cases, we might want to find differences between conditions, e.g. control vs treatment, we would then set categories=DBA_CONDITION)
+
+  
+```{r Diffbind3a}
+  DBA <- dba.contrast(DBA,categories=DBA_TISSUE,minMembers=2)
+```
+
+DiffBind allows access to several methods for statistical testing of count data, most notable EdgeR and DESeq2. The Default method is (DESeq2)[https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8], which was initially developed for RNA-Seq data sets. Note, that there are also a number of normalization options. Here we will use the default normalization. It is important to think about this and to explore the DiffBind vignette further. **The results can change massively when using a different normalization method.**
+
+  
+```{r Diffbind3}
+  DBA <- dba.analyze(DBA)
+```
+
+
+The new DBA object has a contrast field added. It shows that you are comparing a group **IMR90** with 2 members to a group **H1** with also two members. Using DESeq it has found 727 peaks to be differentially modified between the two groups.
+
+```{r Diffbind4}
+  DBA
+```
+  
+We next examine the results:
+
+```{r Diffbind3b}
+  dba.plotMA(DBA)
+  dba.plotVolcano(DBA)
+  DBA.DB <- dba.report(DBA)
+  DBA.DB 
+```
+
+
+
+
+
+
+
+
+
+
+## RRBS Data Analysis using methylKit
+
+We will use the following libraries:
+
+```{r,  eval=FALSE}
+source("https://bioconductor.org/biocLite.R")
+biocLite("methylKit")
+```
+
+```{r,  results='hide',message=FALSE,warning=FALSE}
+library(methylKit)
+library(genomation)
+library(ggplot2)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+# library(bsseqData)names(knitr::knit_engines$get())
+
+```
+
+
+### Loading the data into R
+
+We will start with an analysis of a small data set comprising 4 samples, two control samples and two tumor samples. The aim is to find methylation differences. I'm providing the coverage files which are outputs from `Bismark methylation extractor tool (v0.18.1)` filtered for chromosome 11. The .cov files contain the following information:
+<chromosome> <start position> <end position> <methylation percentage> <count methylated> <count unmethylated>, for example.:
+
+```{bash}
+head Trieste_Data/RRBS/chr11.RRBS_B372.cov
+```
+
+To read the data into R we will first use the `MethylKit`
+```{r}
+
+file.list <- list("Trieste_Data/RRBS/chr11.RRBS_B372.cov",
+                  "Trieste_Data/RRBS/chr11.RRBS_B436.cov",
+                  "Trieste_Data/RRBS/chr11.RRBS_B098.cov",
+                  "Trieste_Data/RRBS/chr11.RRBS_B371.cov")
+
+
+    sample.ids = list("Control.1", "Control.2","Tumor1","Tumor2")
+    treatment = c(0,0,1,1) 
+
+
+    myobj=methRead(file.list,
+        sample.id=sample.ids,
+        assembly="m10",
+        treatment=treatment,
+        context="CpG",
+        pipeline="bismarkCoverage")
+
+```
+
+Let's  have a first look:
+
+```{r}
+
+myobj
+```
+
+Let's look at the coverage of the CpG sites on the first sample:
+
+
+```{r}
+
+getCoverageStats(myobj[[1]],plot=TRUE,both.strands=FALSE)
+```
+
+
+And the methylation levels:
+
+```{r}
+
+getMethylationStats(myobj[[1]],plot=TRUE,both.strands=FALSE)
+```
+
+
+
+
+Let's filter out CpG sites with low coverage (less than 100 reads) and exceptionnaly high covered sites: How does the histogram look like now:
+
+```{r}
+
+filtered.myobj = filterByCoverage(myobj,lo.count=10,lo.perc=NULL,
+                                      hi.count=NULL,hi.perc=99.9)
+getCoverageStats(filtered.myobj[[1]],plot=TRUE,both.strands=FALSE)
+
+```
+
+In the next step we combine the different samples into a single table:
+
+```{r}
+meth = unite(filtered.myobj, destrand=FALSE)
+nrow(meth)
+head(meth)
+```
+
+We are left with 19113 CpG sites.
+For these we are now interested in the correlation of their methylation levels between samples.
+
+```{r}
+getCorrelation(meth,plot=TRUE)
+```
+
+We can also cluster the samples as a first sanity check:
+
+```{r}
+clusterSamples(meth, dist="correlation", method="ward", plot=TRUE)
+```
+
+Or we use Principal Component Analysis
+```{r}
+PCASamples(meth,adj.lim=c(1,0.4))
+```
+
+As you can see, the Control samples cluster together nicely. However, not surprisingly, there is quite some difference between the tumor samples.
+
+The next thing you might want to do is examine and remove batch effects. Have a look at the methylKit documentation for more details.
+
+Here we will continue to examine the methylation levels across the different samples:
+
+```{r}
+mat=percMethylation(meth)
+head(mat)
+```
+
+In order to look at violin plots of the methylation levels for the different samples we will create a new data frame:
+
+```{r}
+m = as.vector(mat)
+s =  c(rep(sample.ids[[1]],nrow(meth)),rep(sample.ids[[2]],nrow(meth)),
+    rep(sample.ids[[3]],nrow(meth)),rep(sample.ids[[4]],nrow(meth)))
+
+c = c(rep('Ctr',2*nrow(meth)),
+    rep('Tu',2*nrow(meth)  ))
+DD = data.frame(mCpG=m,sample=as.factor(s),condition=as.factor(c))
+```
+
+```{r, eval=FALSE}
+
+data_summary <- function(x) {
+   m <- mean(x)
+   ymin <- m-sd(x)
+   ymax <- m+sd(x)
+   return(c(y=m,ymin=ymin,ymax=ymax))
+}
+
+p <- ggplot(DD, aes(x=sample, y=mCpG,fill = condition)) +
+    geom_violin(trim=FALSE) +
+    scale_fill_manual(values=c( "#a6cee3","#1f78b4","#b2df8a","#33a02c"))+
+    coord_flip()+
+    labs(x="sample", y = "% mCpG")+
+    stat_summary(fun.data=data_summary)
+    geom_boxplot(width=0.1)
+
+    plot(p)
+    
+```
+![](violinPlot.png "Violine Plot")
+
+
+### Differential Analysis of methylated CpGs
+
+We next try to find CpGs which are significantly different between conditions:
+
+```{r}
+myDiff=calculateDiffMeth(meth)
+```
+
+Let's have a look at the results:
+
+```{r}
+head(myDiff)
+# get hyper methylated bases
+myDiff25p.hyper=getMethylDiff(myDiff,difference=25,qvalue=0.01,type="hyper")
+#
+# get hypo methylated bases
+myDiff25p.hypo=getMethylDiff(myDiff,difference=25,qvalue=0.01,type="hypo")
+#
+#
+# get all differentially methylated bases
+myDiff25p=getMethylDiff(myDiff,difference=25,qvalue=0.01)
+diffMethPerChr(myDiff,plot=TRUE,qvalue.cutoff=0.01, meth.cutoff=25)
+```
+
+
+### Annotating Differentially methylated bases
+
+First we need to get the genomic annotation and turn it into a GRangesList object
+```{R}
+txdb = TxDb.Mmusculus.UCSC.mm10.knownGene
+seqlevels(txdb) <- "chr11"
+
+
+exons <- unlist(exonsBy(txdb))
+names(exons) <- NULL
+type='exons'
+mcols(exons) = type
+
+introns <- unlist(intronsByTranscript(txdb))
+names(introns) <- NULL
+type='intron'
+mcols(introns) = type
+
+promoters <- promoters(txdb)
+names(promoters) <- NULL
+type='promoters'
+mcols(promoters) = type
+
+TSSes <- promoters(txdb,upstream=1, downstream=1)
+names(TSSes) <- NULL
+type='TSSes'
+mcols(TSSes) = type
+
+Anno <- GRangesList()
+Anno$exons <- exons
+Anno$introns <- introns
+Anno$promoters <- promoters
+Anno$TSSes <- TSSes
+```
+
+```{R}
+diffAnnhyper=annotateWithGeneParts(as(myDiff25p.hyper,"GRanges"),Anno)
+getTargetAnnotationStats(diffAnnhyper,percentage=TRUE,precedence=TRUE)
+plotTargetAnnotation(diffAnnhyper,precedence=TRUE,
+    main="hypermethylated CpGs")
+
+diffAnnhypo=annotateWithGeneParts(as(myDiff25p.hypo,"GRanges"),Anno)
+getTargetAnnotationStats(diffAnnhypo,percentage=TRUE,precedence=TRUE)
+plotTargetAnnotation(diffAnnhypo,precedence=TRUE,
+    main="hypomethylated CpGs")
+
+```
+```{R,eval=FALSE}
+
+library("AnnotationHub")
+library("annotatr")
+annots = c('mm10_cpgs')
+annotations = build_annotations(genome = 'mm10', annotations = annots)
+diffCpGann=annotateWithFeatureFlank(as(myDiff25p,"GRanges"),
+                                    cpg.obj$CpGi,cpg.obj$shores,
+                         feature.name="CpGi",flank.name="shores")
+plotTargetAnnotation(diffCpGann,col=c("green","gray","white"),
+       main="differential methylation annotation")
+
+```
+
+Interesstingly, we find that CpGs in Promoter Regions are more likely to gain methylation in the tumor samples, and that CpGs in intergenic regions are more likely to loose methylation. 
+
+In addition to an analysis of individual CpGs, methylKit also allows to follow a tiling window approach. See the Vignette for more details.
+
+## RRBS Data Analysis using BSSeq
+
+We will use the following libraries:
+
+```{r,  results='hide',message=FALSE,warning=FALSE}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("genomation")
+
+library(bsseq)
+library(DSS)
+
+```
+
+
+### Loading Reads into R
+
+In this tutorial we will use a data set which is provided with the package `bsseqData`. However, if you wanted to anaylse your own data sets which you have aligned for example with `Bismark` the package provides several functions to parse outputs from  these aligners e.g. `read.bismark`. 
+
+
+
+   
+
+```{r}
+path = 'Trieste_Data/RRBS/'
+
+dat1.1 <- read.table(file.path(path, "chr11.RRBS_B372.cov.mod2"), header=TRUE, col.names=c("chr","pos", "N", "X"))
+dat1.2 <- read.table(file.path(path, "chr11.RRBS_B436.cov.mod2"), header=TRUE, col.names=c("chr","pos", "N", "X"))
+dat2.1 <- read.table(file.path(path, "chr11.RRBS_B098.cov.mod2"), header=TRUE, col.names=c("chr","pos", "N", "X"))
+dat2.2 <- read.table(file.path(path, "chr11.RRBS_B371.cov.mod2"), header=TRUE, col.names=c("chr","pos", "N", "X"))
+
+sample.ids = list("Control.1", "Control.2","Tumor1","Tumor2")
+treatment = c(0,0,1,1)
+
+Type <- c("control", "control","tumor","tumor") 
+names(Type) <- sample.ids 
+
+BS.cancer.ex <- makeBSseqData( list(dat1.1, dat1.2,
+                            dat2.1, dat2.2),
+                       sampleNames =  sample.ids)
+
+pData(BS.cancer.ex) <- data.frame(Type= Type)
+
+```
+
+
+### The Example Data Set
+
+We will use a data set provided with the `BS.cancer.ex` data package.
+It already contains a `BSseq` object storing data on chromosome 21 and 22 from a whole-genome bisulfite sequencing (WGBS) experiment for colon cancer. For this experiment, 3 patients were sequenced and the data contains matched colon cancer and normal colon. For more details see `?BS.cancer.ex`. 
+
+We load the data and update the `BSseq` object in order to use it with the current class definitoin:
+
+```{r }
+# data(BS.cancer.ex)
+# BS.cancer.ex <- updateObject(BS.cancer.ex)
+```
+
+Let's have a quick look at the data:
+
+```{r }
+BS.cancer.ex
+```
+
+And to retrieve some more information about the experimental phenotypes:
+```{r }
+pData(BS.cancer.ex)
+```
+
+
+```{r }
+cols <- c('#fc8d59','#91cf60') 
+names(cols) <- c("tumor","control")
+```
+
+### Initial Analysis  
+
+Let's subset the data even further to only look at chromsome 11:
+```{r }
+BS.cancer.ex <- chrSelectBSseq(BS.cancer.ex, seqnames = "chr11", order = TRUE)
+```
+
+
+How many sites are we looking at now?
+```{r}
+length(BS.cancer.ex)
+```
+
+
+
+Let's have a look at the first 10 genomic positions:
+
+```{r }
+head(granges(BS.cancer.ex), n = 10)
+```
+
+What is the read coverage at these positions ?
+```{r }
+BS.cov <- getCoverage(BS.cancer.ex)
+head(BS.cov, n = 10)
+```
+
+And the methylation level ?
+```{r}
+BS.met <- getMeth(BS.cancer.ex,  type = "raw")
+head(BS.met, n = 10)
+```
+
+We could also be interessted in the coverage / methylation level of all CpGs within a certain region, say for a 2800bp region on Chromosome 11 from 3191001 to 3193800:    
+```{r}
+Reg <- GRanges(seqname='chr11',IRanges( 3191001,3193800))
+getCoverage(BS.cancer.ex,regions=Reg)
+getMeth(BS.cancer.ex,  type = "raw",regions=Reg)
+
+```
+
+Why are there so many NANs in the methylation calls?
+
+Let's have a look at the coverage:
+Globally, how many methylation calls do we have ?
+
+```{r}
+coverage.per.sample <- colSums(BS.cov)
+barplot( coverage.per.sample, ylab="Number of observations per sample", names= rownames(attr( BS.cancer.ex ,"colData")),col=cols[match(BS.cancer.ex$Type,names(cols))])
+```
+
+
+What is the numbegetCorrelation(meth,plot=TRUE)r / percentage of CpGs with 0 coverage in all samples ?
+```{r}
+sum(rowSums(BS.cov) == 0)
+```
+
+Coverage per CpG
+```{r}
+hist( rowSums(BS.cov), breaks=1000, xlab="Coverage per CpG sites", main= "Coverage per CpG sites")
+hist( rowSums(BS.cov), breaks=1000, xlab="Coverage per CpG sites", main= "Coverage per CpG sites", xlim=c(0,200))
+```
+
+Number / percentage of CpGs which are covered by at least 1 read in all 6 samples
+```{r}
+sum(rowSums( BS.cov >= 10) == 4)
+round(sum(rowSums( BS.cov >= 1) == 4) / length(BS.cancer.ex)*100,2)
+```
+
+
+## BSsmooth: Fitting over region
+
+applies local averaging to improve precision of regional methylation measurements / minimize coverage issues
+It can take a some minutes
+
+```{r BSsmooth1}
+BS.cancer.ex.fit <- BSmooth(BS.cancer.ex, verbose = TRUE)
+```      
+
+### Filtering loci per coverate          
+
+```{r BSsmooth2}
+keepLoci.ex <- which(rowSums(BS.cov[, BS.cancer.ex$Type == "tumor"] >= 2) >= 2 &
+                       rowSums(BS.cov[, BS.cancer.ex$Type == "control"] >= 2) >= 2)
+
+    
+length(keepLoci.ex)
+BS.cancer.ex.fit <- BS.cancer.ex.fit[keepLoci.ex,]
+
+#####
+BS.cancer.ex.tstat <- BSmooth.tstat(BS.cancer.ex.fit, 
+                                    group1 = c("Tumor1","Tumor2"),
+                                    group2 = c("Control.1", "Control.2"),
+                                    estimate.var = "group2",
+                                    local.correct = TRUE,
+                                    verbose = TRUE)
+
+
+```
+
+## Finding DMRs
+```{r BSsmooth3}
+dmrs0 <- dmrFinder(BS.cancer.ex.tstat, cutoff = c(-4.6, 4.6))
+dmrs <- subset(dmrs0, n >= 3 & abs(meanDiff) >= 0.1)
+head(dmrs)
+```
+
+### Number of DMRs
+```{r BSsmooth3a}
+nrow(dmrs)    
+```
+
+### Size of the DMRs
+```{r BSsmooth4}
+boxplot( dmrs$width, ylab="Size DMR (bp)")
+```
+
+### Number of hypomethylated and methylated DMRs
+```{r BSsmooth5}
+barplot( c(sum(dmrs$direction == "hypo"), sum(dmrs$direction == "hyper")), ylab="Number of DMRs", 
+         names=c("Hypo", "Hyper"))
+```                 
+
+### plot example DRMs)
+```{r BSsmooth6}
+plotRegion(BS.cancer.ex.fit, dmrs[2,], extend = 5000, addRegions = dmrs, col=c(rep("black",2), rep("red", 2)))
+```
+
+```{r }
+Reg <- GRanges(seqname=dmrs[2,1],IRanges( dmrs[2,2],dmrs[2,3]))
+```
+
+
+# Session Info
+
+```{r END}
+sessionInfo()
+```
+
+
