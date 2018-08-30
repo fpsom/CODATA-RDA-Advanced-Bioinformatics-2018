@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
-![ELIXIR, ICSU, CODATA Logos](_static/images/Full-Logo.png "ELIXIR, RDA, ICSU, CODATA Logos")
+![ELIXIR, ICSU, CODATA Logos](_static/images/FullLogo.png "ELIXIR, RDA, ICSU, CODATA Logos")
 
 ## Read the docs version
 https://codata-rda-advanced-bioinformatics-2018.readthedocs.io
