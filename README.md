@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
-![ELIXIR, ICSU, CODATA Logos](_static/images/FullLogo.png "ELIXIR, RDA, ICSU, CODATA Logos")
+![ELIXIR, ICSU, CODATA Logos](_static/images/FinalCompleteLogo.png "ELIXIR, RDA, ICSU, CODATA, H3ABioNet, Goblet Logos")
 
 ## Read the docs version
 https://codata-rda-advanced-bioinformatics-2018.readthedocs.io
@@ -19,10 +19,9 @@ _The rendered site is available [here](https://codata-rda-advanced-bioinformatic
 
 ## License
 
-![CC by 4.0](https://licensebuttons.net/l/by/4.0/88x31.png)
-All the instruction material is made available under the [Creative Commons Attribution license CC by 4.0](https://creativecommons.org/licenses/by/4.0/). Please see [LICENSE](LICENSE.md) for more details.
+![CC BY-SA 4.0](https://licensebuttons.net/l/by-sa/4.0/88x31.png)
+All the instruction material is made available under the [Creative Commons Attribution-ShareAlike 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0). Please see [LICENSE](LICENSE.md) for more details.
 
 ## Citation
 
-Fotis E. Psomopoulos, ... (eds): "CODATA-RDA-Advanced-Bioinformatics-2018"  Version 2018.01, August 2018,
-https://github.com/fpsom/CODATA-RDA-Advanced-Bioinformatics-2018 In progress.
+Amel Ghouila, Gabriele Schweikert, Fotis E. Psomopoulos, "CODATA-RDA-Advanced-Bioinformatics-2018", Version 2018.01, August 2018, https://github.com/fpsom/CODATA-RDA-Advanced-Bioinformatics-2018 In progress.
