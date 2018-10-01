@@ -1,5 +1,6 @@
 # ELIXIR/CODATA-RDA Advanced Bioinformatics Workshop
 
+[![DOI](https://zenodo.org/badge/143014233.svg)](https://zenodo.org/badge/latestdoi/143014233)
 [![Documentation Status](https://readthedocs.org/projects/codata-rda-advanced-bioinformatics-2018/badge/?version=latest)](https://codata-rda-advanced-bioinformatics-2018.readthedocs.io/en/latest/?badge=latest)
 
 ![ELIXIR, ICSU, CODATA Logos](_static/images/FinalCompleteLogo.png "ELIXIR, RDA, ICSU, CODATA, H3ABioNet, Goblet Logos")
